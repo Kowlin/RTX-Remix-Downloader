@@ -157,6 +157,7 @@ def main() -> None:
         "This script requests the latest artifact builds from the official Github repositories.\n"
         "This downloads the file in the same location as the script, unzips and cleans up after itself.\n"
         "Find us on Discord [blue]https://discord.gg/rtxremix[/blue]\n"
+        "*This script is not affiliated with NVIDIA or the RTXRemix project.*\n"
         "\n"
         "Press Enter to continue..."
     )
