@@ -1,8 +1,8 @@
-import os
 import zipfile
 import logging
 import sys
 import argparse
+from subprocess import Popen
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -11,6 +11,7 @@ import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.logging import RichHandler
+from rich.prompt import Confirm
 
 parser = argparse.ArgumentParser(
     prog="RTXRemix Downloader",
@@ -43,7 +44,7 @@ REPOSITORIES = {
         "temp_dir": None,
         "main_directory": False,
         "artifact_branch": "main",
-    }
+    },
 }
 
 HTTP = httpx.Client(
@@ -61,7 +62,7 @@ CONSOLE = Console()
 PROGRESS = Progress(
     SpinnerColumn(),
     TextColumn("[bold blue] {task.completed} of {task.total} steps completed"),
-    console=CONSOLE
+    console=CONSOLE,
 )
 STEP_COUNTER = PROGRESS.add_task("Steps", total=len(REPOSITORIES) * 2 + 4)
 
@@ -73,7 +74,9 @@ def replace_recursively(root_path: Path, move_to: Path) -> None:
             LOGGER.debug(f"Replacing {child} with {move_to.joinpath(child.name)}")
             child.replace(move_to.joinpath(child.name))
         elif child.is_dir():
-            LOGGER.debug(f"Replacing {child} with {move_to.joinpath(child.name) if move_to else None}")
+            LOGGER.debug(
+                f"Replacing {child} with {move_to.joinpath(child.name) if move_to else None}"
+            )
             move_to.joinpath(child.name).mkdir(exist_ok=True)
             replace_recursively(child, move_to.joinpath(child.name))
             child.rmdir()
@@ -83,7 +86,9 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
     """Fetches the latest release from a repository"""
     path = Path(temp_dir.name)
 
-    PROGRESS.print(f"Fetching the latest release info from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(
+        f"Fetching the latest release info from [bold blue][{repo}[/bold blue]"
+    )
     resp = HTTP.get(f"https://api.github.com/repos/{repo}/releases/latest")
     json = resp.json()
 
@@ -95,7 +100,9 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
     PROGRESS.print(f"Downloading latest release from [bold blue][{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     with open(path.joinpath(f"{json['name']}.zip"), "wb") as f:
-        with HTTP.stream("GET", download_url, timeout=30, follow_redirects=True) as resp:
+        with HTTP.stream(
+            "GET", download_url, timeout=30, follow_redirects=True
+        ) as resp:
             for data in resp.iter_bytes():
                 f.write(data)
 
@@ -116,15 +123,20 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
     """Fetches the latest artifact from a repository"""
     path = Path(temp_dir.name)
 
-    PROGRESS.print(f"Fetching the latest artifact info from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(
+        f"Fetching the latest artifact info from [bold blue][{repo}[/bold blue]"
+    )
     resp = HTTP.get(f"https://api.github.com/repos/{repo}/actions/runs")
     json = resp.json()
 
     # Grab the first succeeded run on the specified artifact branch.
     # Runs are sorted from newest to oldest by GitHub. So no need to date check.
     for run in json["workflow_runs"]:
-        if run['head_branch'] == REPOSITORIES[repo]['artifact_branch'] and run['conclusion'] == "success":
-            resp = HTTP.get(run['artifacts_url'])
+        if (
+            run["head_branch"] == REPOSITORIES[repo]["artifact_branch"]
+            and run["conclusion"] == "success"
+        ):
+            resp = HTTP.get(run["artifacts_url"])
             json = resp.json()
             break
 
@@ -132,13 +144,20 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
         if "release" in artifact["name"]:
             artifact_name = artifact["name"]
             id = artifact["id"]
-            size = artifact["size_in_bytes"]  # GitHub gives this as pre-compression size. So it's useless
+            size = artifact[
+                "size_in_bytes"
+            ]  # GitHub gives this as pre-compression size. So it's useless
             break
 
     PROGRESS.print(f"Downloading latest artifact from [bold blue][{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     with open(path.joinpath(f"{artifact_name}.zip"), "wb") as f:
-        with HTTP.stream("GET", f"https://nightly.link/{repo}/actions/artifacts/{id}.zip", timeout=30, follow_redirects=True) as resp:
+        with HTTP.stream(
+            "GET",
+            f"https://nightly.link/{repo}/actions/artifacts/{id}.zip",
+            timeout=30,
+            follow_redirects=True,
+        ) as resp:
             for data in resp.iter_bytes():
                 f.write(data)
 
@@ -163,17 +182,22 @@ def main() -> None:
     )
 
     with PROGRESS:
-
         for repo, data in REPOSITORIES.items():
             if data["repo_type"] == "release":
-                data["temp_dir"] = fetch_release(repo, TemporaryDirectory(prefix="RTXREMIX-"))
+                data["temp_dir"] = fetch_release(
+                    repo, TemporaryDirectory(prefix="RTXREMIX-")
+                )
             elif data["repo_type"] == "artifact":
-                data["temp_dir"] = fetch_artifact(repo, TemporaryDirectory(prefix="RTXREMIX-"))
+                data["temp_dir"] = fetch_artifact(
+                    repo, TemporaryDirectory(prefix="RTXREMIX-")
+                )
 
         main_directory = None
         for repo, data in REPOSITORIES.items():
             if data["main_directory"]:
-                main_directory = Path(data["temp_dir"].name)  # Returns a TemporaryDirectory object
+                main_directory = Path(
+                    data["temp_dir"].name
+                )  # Returns a TemporaryDirectory object
                 break
 
         # Move all the files to their appropiate locations
@@ -184,7 +208,10 @@ def main() -> None:
                 if data["move_to"] is None:
                     replace_recursively(Path(data["temp_dir"].name), main_directory)
                 else:
-                    replace_recursively(Path(data["temp_dir"].name), main_directory.joinpath(data["move_to"]))
+                    replace_recursively(
+                        Path(data["temp_dir"].name),
+                        main_directory.joinpath(data["move_to"]),
+                    )
 
         # Delete debugging symbols
         # Yes this looks ugly. Too bad!
@@ -198,7 +225,7 @@ def main() -> None:
             child.unlink()
 
         # Move main_directory to working dir
-        PROGRESS.print("Moving files to the \"remix\" directory")
+        PROGRESS.print('Moving files to the "remix" directory')
         PROGRESS.advance(STEP_COUNTER)
         final_path = Path(sys.argv[0]).parent.joinpath("remix")
         final_path.mkdir(exist_ok=True)
@@ -212,10 +239,13 @@ def main() -> None:
 
         PROGRESS.print("[green]Success![/green]")
 
-    CONSOLE.input(
-        "\n"
-        "Press Enter to exit..."
-    )
+    if Confirm.ask(
+        "Would you like to open the remix directory in Explorer?",
+        default=True,
+        console=CONSOLE,
+    ):
+        Popen(f'explorer "{final_path}"')
+    CONSOLE.input("\n" "Press Enter to exit...")
 
 
 if __name__ == "__main__":

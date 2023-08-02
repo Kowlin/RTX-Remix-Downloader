@@ -1,3 +1,4 @@
 httpx
 rich
 pyinstaller
+black==23.7.0
