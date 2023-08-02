@@ -11,7 +11,7 @@ import httpx
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.logging import RichHandler
-from rich.prompt import Confirm
+from rich.prompt import Confirm, Prompt
 
 parser = argparse.ArgumentParser(
     prog="RTXRemix Downloader",
@@ -65,6 +65,10 @@ PROGRESS = Progress(
     console=CONSOLE,
 )
 STEP_COUNTER = PROGRESS.add_task("Steps", total=len(REPOSITORIES) * 2 + 4)
+
+
+class HiddenPrompt(Prompt):
+    prompt_suffix = ""
 
 
 def replace_recursively(root_path: Path, move_to: Path) -> None:
@@ -171,14 +175,16 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
 
 def main() -> None:
     """Main loop"""
-    CONSOLE.input(
+    HiddenPrompt.ask(
         "[b]RTX Remix Download Script[/b]\n"
         "This script requests the latest artifact builds from the official Github repositories.\n"
         "This downloads the file in the same location as the script, unzips and cleans up after itself.\n"
-        "Find us on Discord [blue]https://discord.gg/rtxremix[/blue]\n"
+        "Find us on Discord: [blue]https://discord.gg/rtxremix[/blue]\n"
         "[i]This script is not affiliated with NVIDIA or the RTXRemix project.[/i]\n"
         "\n"
-        "Press Enter to continue..."
+        "Press Enter to continue...",
+        password=True,
+        console=CONSOLE,
     )
 
     with PROGRESS:
@@ -240,12 +246,20 @@ def main() -> None:
         PROGRESS.print("[green]Success![/green]")
 
     if Confirm.ask(
-        "Would you like to open the remix directory in Explorer?",
+        "Would you like to open the [bold blue]Remix[/bold blue] directory now?",
         default=True,
         console=CONSOLE,
     ):
         Popen(f'explorer "{final_path}"')
-    CONSOLE.input("\n" "Press Enter to exit...")
+
+    HiddenPrompt.ask(
+        "You can find the latest RTX Remix install in:\n"
+        f"[bold blue]{final_path.resolve()}[/bold blue]\n"
+        "RTX Remix install guide:\n"
+        "[blue]https://github.com/NVIDIAGameWorks/rtx-remix/wiki/runtime-user-guide[/blue]\n"
+        "\n"
+        "Press [bold]Enter[/bold] to close this window..."
+    )
 
 
 if __name__ == "__main__":
@@ -253,10 +267,3 @@ if __name__ == "__main__":
         LOGGER.setLevel(logging.DEBUG)
         logging.getLogger("httpx").setLevel(logging.DEBUG)
     main()
-
-
-# TODO LIST
-# Clean up code
-# Add more user instructions
-# Push to GH, Add workflows for autobuild on tag
-# Add a progress bar for the whole script... Thanks copilot
