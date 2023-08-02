@@ -87,7 +87,7 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
     path = Path(temp_dir.name)
 
     PROGRESS.print(
-        f"Fetching the latest release info from [bold blue][{repo}[/bold blue]"
+        f"Fetching the latest release info from [bold blue]{repo}[/bold blue]"
     )
     resp = HTTP.get(f"https://api.github.com/repos/{repo}/releases/latest")
     json = resp.json()
@@ -97,7 +97,7 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
             download_url = asset["browser_download_url"]
             size = asset["size"]
 
-    PROGRESS.print(f"Downloading latest release from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(f"Downloading latest release from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     with open(path.joinpath(f"{json['name']}.zip"), "wb") as f:
         with HTTP.stream(
@@ -106,7 +106,7 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
             for data in resp.iter_bytes():
                 f.write(data)
 
-    PROGRESS.print(f"Extracting latest release from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(f"Extracting latest release from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     zipfile.ZipFile(path.joinpath(f"{json['name']}.zip")).extractall(path)
     path.joinpath(f"{json['name']}.zip").unlink()
@@ -124,7 +124,7 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
     path = Path(temp_dir.name)
 
     PROGRESS.print(
-        f"Fetching the latest artifact info from [bold blue][{repo}[/bold blue]"
+        f"Fetching the latest artifact info from [bold blue]{repo}[/bold blue]"
     )
     resp = HTTP.get(f"https://api.github.com/repos/{repo}/actions/runs")
     json = resp.json()
@@ -149,7 +149,7 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
             ]  # GitHub gives this as pre-compression size. So it's useless
             break
 
-    PROGRESS.print(f"Downloading latest artifact from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(f"Downloading latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     with open(path.joinpath(f"{artifact_name}.zip"), "wb") as f:
         with HTTP.stream(
@@ -161,7 +161,7 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
             for data in resp.iter_bytes():
                 f.write(data)
 
-    PROGRESS.print(f"Extracting latest artifact from [bold blue][{repo}[/bold blue]")
+    PROGRESS.print(f"Extracting latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
     zipfile.ZipFile(path.joinpath(f"{artifact_name}.zip")).extractall(path)
     path.joinpath(f"{artifact_name}.zip").unlink()
@@ -176,7 +176,7 @@ def main() -> None:
         "This script requests the latest artifact builds from the official Github repositories.\n"
         "This downloads the file in the same location as the script, unzips and cleans up after itself.\n"
         "Find us on Discord [blue]https://discord.gg/rtxremix[/blue]\n"
-        "*This script is not affiliated with NVIDIA or the RTXRemix project.*\n"
+        "[i]This script is not affiliated with NVIDIA or the RTXRemix project.[/i]\n"
         "\n"
         "Press Enter to continue..."
     )
