@@ -21,7 +21,8 @@ Currently only works on the same drive that the temp folder is on due to PathLib
 ## Support
 Find us on Discord: [RTX Remix Showcase](https://discord.gg/rtxremix)
 
-Script created by @Kowlin with some nagging by @RuneStorm
-Original PowerShell script version by @Kowlin & @RuneStorm
+Script created by [Kowlin](https://github.com/Kowlin) with some nagging by [RuneStorm](https://github.com/RuneStorm)
 
-This Project is in no way directly affiliated with NVIDIA or the RTX Remix project.
+Original PowerShell script version by [Kowlin](https://github.com/Kowlin) & [RuneStorm](https://github.com/RuneStorm)
+
+**This Project is in no way directly affiliated with NVIDIA or the RTX Remix project.**
