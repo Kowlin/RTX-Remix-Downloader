@@ -2,6 +2,7 @@ import zipfile
 import logging
 import sys
 import argparse
+import shutil
 from subprocess import Popen
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -76,7 +77,7 @@ def replace_recursively(root_path: Path, move_to: Path) -> None:
     for child in root_path.iterdir():
         if child.is_file():
             LOGGER.debug(f"Replacing {child} with {move_to.joinpath(child.name)}")
-            child.replace(move_to.joinpath(child.name))
+            shutil.move(str(child), str(move_to.joinpath(child.name)))
         elif child.is_dir():
             LOGGER.debug(
                 f"Replacing {child} with {move_to.joinpath(child.name) if move_to else None}"
