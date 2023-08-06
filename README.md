@@ -8,6 +8,8 @@ It will pull the latest files from the following NVIDIAGameWorks repos
 * [dxvk-remix](https://github.com/NVIDIAGameWorks/dxvk-remix/)
 * [bridge-remix](https://github.com/NVIDIAGameWorks/bridge-remix/)
 
+ # [Download](https://github.com/Kowlin/RTX-Remix-Downloader/releases/latest/download/RTX.Remix.Downloader.exe)
+
 ## Installation
 Simply move the .exe file to a folder or desktop and run it. It will create a subdirectory called "Remix" that contains all the files it downloaded.
 
