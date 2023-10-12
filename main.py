@@ -14,16 +14,29 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.logging import RichHandler
 from rich.prompt import Confirm, Prompt
 
+BUILD_NAMES = []
+
+
 parser = argparse.ArgumentParser(
     prog="RTXRemix Downloader",
     description="Downloads the latest RTXRemix builds.",
 )
 parser.add_argument(
+    '-d',
     "--debug",
     action="store_true",
     help="Enables debug logging.",
 )
+parser.add_argument(
+    '-b',
+    "--build-type",
+    default="release",
+    choices=["release", "debug", "debugoptimized"],
+    help="Specifies the build type to download.",
+)
 args = parser.parse_args()
+
+print(f"Downloading {args.build_type} builds")
 
 REPOSITORIES = {
     "NVIDIAGameWorks/rtx-remix": {
@@ -146,13 +159,13 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
             break
 
     for artifact in json["artifacts"]:
-        if "release" in artifact["name"]:
+        if args.build_type in artifact["name"]:
             artifact_name = artifact["name"]
             id = artifact["id"]
-            size = artifact[
-                "size_in_bytes"
-            ]  # GitHub gives this as pre-compression size. So it's useless
+            size = artifact["size_in_bytes"]
+            BUILD_NAMES.append(artifact_name)
             break
+
 
     PROGRESS.print(f"Downloading latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
@@ -237,6 +250,16 @@ def main() -> None:
         final_path = Path(sys.argv[0]).parent.joinpath("remix")
         final_path.mkdir(exist_ok=True)
         replace_recursively(main_directory, final_path)
+        
+        # Print the names of the downloaded packages
+        print("Downloaded the following packages:")
+        for name in BUILD_NAMES:
+            print(name)
+            
+        # Write build names to a text file
+        with open(final_path.joinpath('build_names.txt'), 'w') as f:
+            for name in BUILD_NAMES:
+                f.write(f'{name}\n')
 
         # Cleanup the temp dirs
         PROGRESS.print("Cleaning up temporary directories")
