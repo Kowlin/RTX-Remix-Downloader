@@ -16,6 +16,22 @@ from rich.prompt import Confirm, Prompt
 
 BUILD_NAMES = []
 
+BUILD_TYPES = {
+    "1": {"type": "release", "description": "(recommended) The default Remix version that prioritizes speed"},
+    "2": {"type": "debugoptimized", "description": "For debugging issues. This build is still fast."},
+    "3": {"type": "debug", "description": "For debugging only. Unplayable in games"},
+}
+
+def get_build_type():
+    print("Please choose a build type:")
+    for choice, build_info in BUILD_TYPES.items():
+        print(f"{choice}: \033[38;5;208m{build_info['type']}\033[0m - {build_info['description']}")
+    while True:
+        chosen_build_type = input("Your choice: ")
+        if chosen_build_type in BUILD_TYPES:
+            return BUILD_TYPES[chosen_build_type]['type']
+        else:
+            print("Invalid choice. Please try again.")
 
 parser = argparse.ArgumentParser(
     prog="RTXRemix Downloader",
@@ -34,7 +50,10 @@ parser.add_argument(
     choices=["release", "debug", "debugoptimized"],
     help="Specifies the build type to download.",
 )
-args = parser.parse_args()
+args = argparse.Namespace()
+args.debug = False  # or True if you want to enable debug by default
+args.build_type = get_build_type()
+
 
 print(f"Downloading {args.build_type} builds")
 
@@ -270,7 +289,7 @@ def main() -> None:
         PROGRESS.print("[green]Success![/green]")
 
     if Confirm.ask(
-        "Would you like to open the [bold blue]Remix[/bold blue] directory now?",
+        "Would you like to open the [bold green]Remix[/bold green] directory now?",
         default=True,
         console=CONSOLE,
     ):
