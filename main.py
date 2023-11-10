@@ -14,16 +14,48 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.logging import RichHandler
 from rich.prompt import Confirm, Prompt
 
+BUILD_NAMES = []
+
+BUILD_TYPES = {
+    "1": {"type": "release", "description": "(recommended) The default Remix version that prioritizes speed"},
+    "2": {"type": "debugoptimized", "description": "For debugging issues. This build is still fast."},
+    "3": {"type": "debug", "description": "For debugging only. Unplayable in games"},
+}
+
+def get_build_type():
+    print("Please choose a build type:")
+    for choice, build_info in BUILD_TYPES.items():
+        print(f"{choice}: \033[38;5;208m{build_info['type']}\033[0m - {build_info['description']}")
+    while True:
+        chosen_build_type = input("Your choice: ")
+        if chosen_build_type in BUILD_TYPES:
+            return BUILD_TYPES[chosen_build_type]['type']
+        else:
+            print("Invalid choice. Please try again.")
+
 parser = argparse.ArgumentParser(
     prog="RTXRemix Downloader",
     description="Downloads the latest RTXRemix builds.",
 )
 parser.add_argument(
+    '-d',
     "--debug",
     action="store_true",
     help="Enables debug logging.",
 )
-args = parser.parse_args()
+parser.add_argument(
+    '-b',
+    "--build-type",
+    default="release",
+    choices=["release", "debug", "debugoptimized"],
+    help="Specifies the build type to download.",
+)
+args = argparse.Namespace()
+args.debug = False  # or True if you want to enable debug by default
+args.build_type = get_build_type()
+
+
+print(f"Downloading {args.build_type} builds")
 
 REPOSITORIES = {
     "NVIDIAGameWorks/rtx-remix": {
@@ -146,13 +178,13 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
             break
 
     for artifact in json["artifacts"]:
-        if "release" in artifact["name"]:
+        if args.build_type in artifact["name"]:
             artifact_name = artifact["name"]
             id = artifact["id"]
-            size = artifact[
-                "size_in_bytes"
-            ]  # GitHub gives this as pre-compression size. So it's useless
+            size = artifact["size_in_bytes"]
+            BUILD_NAMES.append(artifact_name)
             break
+
 
     PROGRESS.print(f"Downloading latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
@@ -237,6 +269,16 @@ def main() -> None:
         final_path = Path(sys.argv[0]).parent.joinpath("remix")
         final_path.mkdir(exist_ok=True)
         replace_recursively(main_directory, final_path)
+        
+        # Print the names of the downloaded packages
+        print("Downloaded the following packages:")
+        for name in BUILD_NAMES:
+            print(name)
+            
+        # Write build names to a text file
+        with open(final_path.joinpath('build_names.txt'), 'w') as f:
+            for name in BUILD_NAMES:
+                f.write(f'{name}\n')
 
         # Cleanup the temp dirs
         PROGRESS.print("Cleaning up temporary directories")
@@ -247,7 +289,7 @@ def main() -> None:
         PROGRESS.print("[green]Success![/green]")
 
     if Confirm.ask(
-        "Would you like to open the [bold blue]Remix[/bold blue] directory now?",
+        "Would you like to open the [bold green]Remix[/bold green] directory now?",
         default=True,
         console=CONSOLE,
     ):
