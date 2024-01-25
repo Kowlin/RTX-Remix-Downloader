@@ -148,11 +148,6 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
     zipfile.ZipFile(path.joinpath(f"{json['name']}.zip")).extractall(path)
     path.joinpath(f"{json['name']}.zip").unlink()
 
-    # Move the contents of the zip to the root of the temp directory.
-    child_path = next(path.iterdir())
-    replace_recursively(child_path, path)
-    child_path.rmdir()
-
     return temp_dir
 
 def download_file(url: str, destination: Path) -> None:
