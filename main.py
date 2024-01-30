@@ -97,7 +97,7 @@ PROGRESS = Progress(
     TextColumn("[bold blue] {task.completed} of {task.total} steps completed"),
     console=CONSOLE,
 )
-STEP_COUNTER = PROGRESS.add_task("Steps", total=len(REPOSITORIES) * 2 + 4)
+STEP_COUNTER = PROGRESS.add_task("Steps", total=len(REPOSITORIES) * 2 + 5)
 
 
 class HiddenPrompt(Prompt):
@@ -148,12 +148,12 @@ def fetch_release(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory
     zipfile.ZipFile(path.joinpath(f"{json['name']}.zip")).extractall(path)
     path.joinpath(f"{json['name']}.zip").unlink()
 
-    # Move the contents of the zip to the root of the temp directory.
-    child_path = next(path.iterdir())
-    replace_recursively(child_path, path)
-    child_path.rmdir()
-
     return temp_dir
+
+def download_file(url: str, destination: Path) -> None:
+    """Downloads a file from the specified URL and saves it to the destination path."""
+    response = HTTP.get(url)
+    destination.write_bytes(response.content)
 
 
 def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirectory:
@@ -200,8 +200,13 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
 
     PROGRESS.print(f"Extracting latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
+
     zipfile.ZipFile(path.joinpath(f"{artifact_name}.zip")).extractall(path)
     path.joinpath(f"{artifact_name}.zip").unlink()
+
+    # Download the bridge.conf file only for the bridge-remix repository
+    if repo == "NVIDIAGameWorks/bridge-remix":
+        download_file("https://raw.githubusercontent.com/NVIDIAGameWorks/bridge-remix/main/bridge.conf", path.joinpath('.trex', 'bridge.conf'))
 
     return temp_dir
 
@@ -279,6 +284,12 @@ def main() -> None:
         with open(final_path.joinpath('build_names.txt'), 'w') as f:
             for name in BUILD_NAMES:
                 f.write(f'{name}\n')
+                
+        # Download the dxvk.conf file
+        PROGRESS.print('Downloading dxvk.conf')
+        PROGRESS.advance(STEP_COUNTER)
+        download_file('https://raw.githubusercontent.com/NVIDIAGameWorks/dxvk-remix/main/dxvk.conf', final_path.joinpath('dxvk.conf'))
+
 
         # Cleanup the temp dirs
         PROGRESS.print("Cleaning up temporary directories")
