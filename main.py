@@ -200,8 +200,13 @@ def fetch_artifact(repo: str, temp_dir: TemporaryDirectory) -> TemporaryDirector
 
     PROGRESS.print(f"Extracting latest artifact from [bold blue]{repo}[/bold blue]")
     PROGRESS.advance(STEP_COUNTER)
+
     zipfile.ZipFile(path.joinpath(f"{artifact_name}.zip")).extractall(path)
     path.joinpath(f"{artifact_name}.zip").unlink()
+
+    # Download the bridge.conf file only for the bridge-remix repository
+    if repo == "NVIDIAGameWorks/bridge-remix":
+        download_file("https://raw.githubusercontent.com/NVIDIAGameWorks/bridge-remix/main/bridge.conf", path.joinpath('.trex', 'bridge.conf'))
 
     return temp_dir
 
